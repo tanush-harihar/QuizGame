@@ -8,7 +8,9 @@ public class GameManager : MonoBehaviour
     public Enemy[] enemies;
     private int currentEnemyIndex = 0;
     private int enemyHP;
+    private int enemyMaxHP;
 
+    public BossBackgroundManager bgManager;
     public QuestionManager questionManager;
     public UIManager uiManager;
 
@@ -17,6 +19,10 @@ public class GameManager : MonoBehaviour
     void Start()
     {
         playerHP = playerMaxHP;
+
+        int selectedCategory = GameSettings.selectedCategory;
+        questionManager.SetCategory(selectedCategory);
+
         StartEnemy();
     }
 
@@ -29,18 +35,25 @@ public class GameManager : MonoBehaviour
         }
 
         Enemy enemy = enemies[currentEnemyIndex];
-        enemyHP = enemy.maxHP;
 
-        Debug.Log("Fighting: " + enemy.name);
+        // 🔥 Scale HP
+        enemyMaxHP = enemy.health + (currentEnemyIndex * 50);
+        enemyHP = enemyMaxHP;
 
-        // 🔥 Set category based on enemy
-        questionManager.SetCategory(currentEnemyIndex);
+        Debug.Log("Fighting: " + enemy.name + " | HP: " + enemyHP);
 
-        // Update UI HP
+        // ❌ REMOVE THIS LINE (IMPORTANT)
+        // questionManager.SetCategory(currentEnemyIndex);
+
+        // UI Updates
         uiManager.UpdatePlayerHP(playerHP, playerMaxHP);
-        uiManager.UpdateEnemyHP(enemyHP, enemy.maxHP);
+        uiManager.UpdateEnemyHP(enemyHP, enemyMaxHP);
 
         uiManager.SetEnemyName(enemy.name);
+
+        if (bgManager != null)
+            bgManager.SetBossBackground(currentEnemyIndex + 1);
+
         NextTurn();
     }
 
@@ -69,9 +82,13 @@ public class GameManager : MonoBehaviour
             Debug.Log("Wrong! Player takes damage.");
         }
 
-        // Update UI HP
+        // Clamp HP (prevents negative weird UI)
+        enemyHP = Mathf.Max(enemyHP, 0);
+        playerHP = Mathf.Max(playerHP, 0);
+
+        // Update UI
         uiManager.UpdatePlayerHP(playerHP, playerMaxHP);
-        uiManager.UpdateEnemyHP(enemyHP, enemies[currentEnemyIndex].maxHP);
+        uiManager.UpdateEnemyHP(enemyHP, enemyMaxHP);
 
         CheckGameState();
     }
@@ -81,7 +98,6 @@ public class GameManager : MonoBehaviour
         if (enemyHP <= 0)
         {
             Debug.Log("Enemy Defeated!");
-
             currentEnemyIndex++;
             StartEnemy();
         }
