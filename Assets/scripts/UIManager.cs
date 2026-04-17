@@ -1,6 +1,8 @@
-using UnityEngine;
 using TMPro;
+using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public class UIManager : MonoBehaviour
 {
@@ -44,4 +46,40 @@ public class UIManager : MonoBehaviour
 
         enemyHPBar.value = (float)current / max;
     }
+    public UnityEngine.UI.Image enemyImage;
+    public Animator enemyAnimator;
+
+    public void SetEnemyVisual(Sprite sprite, RuntimeAnimatorController anim)
+    {
+        if (enemyImage != null)
+            enemyImage.sprite = sprite;
+
+        if (enemyAnimator != null && anim != null)
+            enemyAnimator.runtimeAnimatorController = anim;
+    }
+    public GameObject endPanel;
+    public TMPro.TextMeshProUGUI resultText;
+    public TMPro.TextMeshProUGUI scoreText;
+
+    public void ShowEndScreen(bool isWin, int score)
+    {
+        endPanel.SetActive(true);
+
+        if (isWin)
+            resultText.text = "YOU WIN!";
+        else
+            resultText.text = "GAME OVER";
+
+        scoreText.text = "Score: " + score;
+    }
+
+    public void RestartGame()
+    {
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+    }
+    public void GoToMenu()
+    {
+        SceneManager.LoadScene("MainMenu");
+    }
+
 }

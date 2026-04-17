@@ -4,7 +4,7 @@ public class GameManager : MonoBehaviour
 {
     public int playerMaxHP = 100;
     private int playerHP;
-
+    private int score = 0;
     public Enemy[] enemies;
     private int currentEnemyIndex = 0;
     private int enemyHP;
@@ -28,6 +28,7 @@ public class GameManager : MonoBehaviour
 
     void StartEnemy()
     {
+
         if (currentEnemyIndex >= enemies.Length)
         {
             Debug.Log("YOU WIN!");
@@ -40,6 +41,8 @@ public class GameManager : MonoBehaviour
         enemyMaxHP = enemy.health + (currentEnemyIndex * 50);
         enemyHP = enemyMaxHP;
 
+        uiManager.SetEnemyVisual(enemy.sprite, enemy.animator);
+
         Debug.Log("Fighting: " + enemy.name + " | HP: " + enemyHP);
 
         // ❌ REMOVE THIS LINE (IMPORTANT)
@@ -51,8 +54,7 @@ public class GameManager : MonoBehaviour
 
         uiManager.SetEnemyName(enemy.name);
 
-        if (bgManager != null)
-            bgManager.SetBossBackground(currentEnemyIndex + 1);
+        bgManager.SetBossBackground(currentEnemyIndex);
 
         NextTurn();
     }
@@ -89,7 +91,15 @@ public class GameManager : MonoBehaviour
         // Update UI
         uiManager.UpdatePlayerHP(playerHP, playerMaxHP);
         uiManager.UpdateEnemyHP(enemyHP, enemyMaxHP);
-
+        if (isCorrect)
+        {
+            enemyHP -= 20;
+            score += 10; // increase score
+        }
+        else
+        {
+            playerHP -= 15;
+        }
         CheckGameState();
     }
 
@@ -97,13 +107,13 @@ public class GameManager : MonoBehaviour
     {
         if (enemyHP <= 0)
         {
-            Debug.Log("Enemy Defeated!");
+            uiManager.ShowEndScreen(true, score);
             currentEnemyIndex++;
             StartEnemy();
         }
         else if (playerHP <= 0)
         {
-            Debug.Log("GAME OVER!");
+            uiManager.ShowEndScreen(false, score);
         }
         else
         {
