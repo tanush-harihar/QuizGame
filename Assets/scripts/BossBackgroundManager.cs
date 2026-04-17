@@ -3,7 +3,7 @@ using UnityEngine.UI;
 
 public class BossBackgroundManager : MonoBehaviour
 {
-    public Image backgroundImage;
+    public SpriteRenderer backgroundImage;
     public Sprite[] backgrounds;
 
     public void SetBossBackground(int index)

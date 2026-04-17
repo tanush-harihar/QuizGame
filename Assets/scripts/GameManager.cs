@@ -18,6 +18,7 @@ public class GameManager : MonoBehaviour
 
     void Start()
     {
+        uiManager.HideEndScreen();
         playerHP = playerMaxHP;
 
         int selectedCategory = GameSettings.selectedCategory;
@@ -54,7 +55,7 @@ public class GameManager : MonoBehaviour
 
         uiManager.SetEnemyName(enemy.name);
 
-        bgManager.SetBossBackground(currentEnemyIndex);
+        bgManager.SetBossBackground(currentEnemyIndex+1);
 
         NextTurn();
     }

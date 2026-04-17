@@ -81,5 +81,9 @@ public class UIManager : MonoBehaviour
     {
         SceneManager.LoadScene("MainMenu");
     }
-
+    public void HideEndScreen()
+    {
+        if (endPanel != null)
+            endPanel.SetActive(false);
+    }
 }
