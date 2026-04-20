@@ -1,17 +1,89 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Networking;
+using System.Collections;
+using Newtonsoft.Json;
 
 public class QuestionManager : MonoBehaviour
 {
     private List<List<Question>> questions; // 0 = Networking, 1 = Programming, 2 = General
+    private List<Question> apiQuestions = new List<Question>();
+    private bool apiLoaded = false;
 
+    [SerializeField] private string apiKey = "qa_sk_720e5dd5fd91e5ec648f9c798fbdff2362eb5d72";
     private int currentCategory = 0;
     private int currentIndex = 0;
 
-    private Question currentQuestion;
+    IEnumerator FetchAPIQuestions()
+    {
+        string url = "https://quizapi.io/api/v1/questions?limit=10";
+
+        UnityWebRequest request = UnityWebRequest.Get(url);
+
+        // 🔥 THIS is the fix
+        request.SetRequestHeader("Authorization", "Bearer " + apiKey);
+
+        yield return request.SendWebRequest();
+
+        Debug.Log("Request Result: " + request.result);
+
+        if (request.result == UnityWebRequest.Result.Success)
+        {
+            string json = request.downloadHandler.text;
+
+            Debug.Log("RAW JSON: " + json);
+
+            string wrapped = "{ \"items\": " + json + "}";
+            APIWrapper wrapper = JsonConvert.DeserializeObject<APIWrapper>(json);
+
+            if (wrapper == null || wrapper.data == null)
+            {
+                Debug.LogError("JSON parsing failed!");
+                yield break;
+            }
+
+            foreach (var apiQ in wrapper.data)
+            {
+                Question q = ConvertToQuestion(apiQ);
+                apiQuestions.Add(q);
+            }
+
+            apiLoaded = true;
+            Debug.Log("API Questions Loaded: " + apiQuestions.Count);
+        }
+        else
+        {
+            Debug.LogError("API FAILED: " + request.error);
+        }
+    }
+    Question ConvertToQuestion(APIQuestion apiQ)
+    {
+        List<string> answers = new List<string>();
+        int correctIndex = 0;
+
+        for (int i = 0; i < apiQ.answers.Count; i++)
+        {
+            answers.Add(apiQ.answers[i].text);
+
+            if (apiQ.answers[i].isCorrect)
+                correctIndex = i;
+        }
+
+        // Ensure exactly 4 options
+        while (answers.Count < 4)
+            answers.Add("N/A");
+
+        return new Question
+        {
+            questionText = apiQ.text,
+            answers = answers.ToArray(),
+            correctIndex = correctIndex
+        };
+    }
 
     void Awake()
     {
+        StartCoroutine(FetchAPIQuestions());
         questions = new List<List<Question>>();
 
         // ---------------- NETWORKING ----------------
@@ -101,33 +173,29 @@ public class QuestionManager : MonoBehaviour
     // 🔥 GET NEXT QUESTION (serial progression)
     public Question GetNextQuestion()
     {
-        List<Question> selectedList = questions[currentCategory];
 
-        if (selectedList.Count == 0)
+        if (apiLoaded && apiQuestions.Count > 0)
         {
-            Debug.LogError("No questions in this category!");
-            return null;
+            return apiQuestions[Random.Range(0, apiQuestions.Count)];
         }
+            // fallback
+            List<Question> selectedList = questions[currentCategory];
 
-        if (currentIndex >= selectedList.Count)
-        {
-            Debug.Log("All questions in this category completed!");
-            currentIndex = 0; // or stop game
-        }
+            if (selectedList == null || selectedList.Count == 0)
+            {
+                Debug.LogError("No local questions available!");
+                return null;
+            }
 
-        currentQuestion = selectedList[currentIndex];
-        currentIndex++;
-        if (currentQuestion.answers.Length != 4)
-        {
-            EnsureFourAnswers(currentQuestion);
-        }
-        return currentQuestion;
+            if (currentIndex >= selectedList.Count)
+                currentIndex = 0;
+
+            Question q = selectedList[currentIndex];
+            currentIndex++;
+
+            return q;
     }
 
-    public bool CheckAnswer(int index)
-    {
-        return index == currentQuestion.correctIndex;
-    }
     void EnsureFourAnswers(Question q)
     {
         List<string> answers = new List<string>(q.answers);

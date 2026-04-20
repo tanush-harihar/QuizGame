@@ -65,25 +65,27 @@ public class GameManager : MonoBehaviour
         currentQuestion = questionManager.GetNextQuestion();
 
         if (currentQuestion == null)
+        {
+            Debug.LogError("Question is NULL!");
             return;
+        }
 
         uiManager.SetQuestion(currentQuestion.questionText, currentQuestion.answers);
     }
 
     public void SubmitAnswer(int index)
     {
-        bool isCorrect = questionManager.CheckAnswer(index);
-
-        if (isCorrect)
+        if (currentQuestion == null)
         {
-            enemyHP -= 20;
-            Debug.Log("Correct! Enemy takes damage.");
+            Debug.LogError("No current question!");
+            return;
         }
-        else
+        if (index < 0)
         {
-            playerHP -= 15;
-            Debug.Log("Wrong! Player takes damage.");
+            Debug.LogError("Invalid answer index!");
+            return;
         }
+        bool isCorrect = index == currentQuestion.correctIndex;
 
         // Clamp HP (prevents negative weird UI)
         enemyHP = Mathf.Max(enemyHP, 0);
@@ -95,7 +97,7 @@ public class GameManager : MonoBehaviour
         if (isCorrect)
         {
             enemyHP -= 20;
-            score += 10; // increase score
+            score += 10;
         }
         else
         {
@@ -108,9 +110,16 @@ public class GameManager : MonoBehaviour
     {
         if (enemyHP <= 0)
         {
-            uiManager.ShowEndScreen(true, score);
             currentEnemyIndex++;
-            StartEnemy();
+
+            if (currentEnemyIndex >= enemies.Length)
+            {
+                uiManager.ShowEndScreen(true, score); // only after all enemies
+            }
+            else
+            {
+                StartEnemy();
+            }
         }
         else if (playerHP <= 0)
         {
